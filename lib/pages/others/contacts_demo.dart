@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mammba/models/Member.dart';
-import 'package:mammba/register_page.dart';
+import 'package:mammba/pages/drawers/register_page.dart';
+import 'package:mammba/pages/home_page.dart';
 
 class _ContactCategory extends StatelessWidget {
   const _ContactCategory({ Key key, this.icon, this.children }) : super(key: key);
@@ -89,8 +90,9 @@ class ContactsDemo extends StatefulWidget {
   static const String routeName = '/contacts';
 
   final Member user;
+  String csrf;
 
-  ContactsDemo({Key key, this.user}) : super(key: key);
+  ContactsDemo({Key key, this.user, this.csrf}) : super(key: key);
 
   @override
   ContactsDemoState createState() => ContactsDemoState();
@@ -131,8 +133,8 @@ class ContactsDemoState extends State<ContactsDemo> {
                     // ));
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => RegisterPage(updateUser: widget.user, isUpdate: true)),
-                    );
+                      MaterialPageRoute(builder: (context) => RegisterPage(updateUser: widget.user, isUpdate: true, csrf: widget.csrf)
+                    ));
                   },
                 )
               ],

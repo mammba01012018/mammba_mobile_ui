@@ -23,20 +23,40 @@ class TravelDestination {
 final List<TravelDestination> destinations = <TravelDestination>[
   const TravelDestination(
     assetName: 'assets/el-nido.jpg',
-    assetPackage: _kGalleryAssetsPackage,
-    title: 'Top 10 Cities to Visit in Tamil Nadu',
+    assetPackage: 'https://sa.kapamilya.com/absnews/abscbnnews/media/2018/news/04/22/042218_palawan2.jpg',
+    title: 'El Nido',
     description: <String>[
-      'Number 10',
+      'El Nido',
       'Thanjavur',
       'Thanjavur, Tamil Nadu',
     ],
   ),
   const TravelDestination(
     assetName: 'assets/el-nido.jpg',
-    assetPackage: _kGalleryAssetsPackage,
-    title: 'Artisans of Southern India',
+    assetPackage: 'http://static.asiawebdirect.com/m/phuket/portals/philippines-hotels-ws/homepage/boracay-island/pagePropertiesImage/boracay.jpg',
+    title: 'Boracay',
     description: <String>[
-      'Silk Spinnerss',
+      'Boracay',
+      'Chettinad',
+      'Sivaganga, Tamil Nadu',
+    ],
+  ),
+  const TravelDestination(
+    assetName: 'assets/el-nido.jpg',
+    assetPackage: 'https://villageconnectph.com/wp-content/uploads/2017/12/batanes.jpg',
+    title: 'Batanes',
+    description: <String>[
+      'Batanes',
+      'Chettinad',
+      'Sivaganga, Tamil Nadu',
+    ],
+  ),
+  const TravelDestination(
+    assetName: 'assets/el-nido.jpg',
+    assetPackage: 'http://3.bp.blogspot.com/-ZrW7eQzEKvU/UbNcdTn5ugI/AAAAAAAAJQ4/bDVnaEpfpFo/s1600/CALAGUAS+%252825%2529.JPG',
+    title: 'Calaguas',
+    description: <String>[
+      'Calaguas',
       'Chettinad',
       'Sivaganga, Tamil Nadu',
     ],
@@ -48,7 +68,7 @@ class TravelDestinationItem extends StatelessWidget {
     : assert(destination != null && destination.isValid),
       super(key: key);
 
-  static const double height = 366.0;
+  static const double height = 300.0;
   final TravelDestination destination;
   final ShapeBorder shape;
 
@@ -62,7 +82,7 @@ class TravelDestinationItem extends StatelessWidget {
       top: false,
       bottom: false,
       child: Container(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(15.0),
         height: height,
         child: Card(
           shape: shape,
@@ -75,22 +95,22 @@ class TravelDestinationItem extends StatelessWidget {
                 child: Stack(
                   children: <Widget>[
                     Positioned.fill(
-                      child: Image.asset(
-                        destination.assetName,
-                        package: destination.assetPackage,
+                      child: Image.network(
+                        destination.assetPackage.toString(),
                         fit: BoxFit.cover,
                       ),
+                      
                     ),
                     Positioned(
-                      bottom: 16.0,
+                      bottom: 12.0,
                       left: 16.0,
                       right: 16.0,
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
-                        child: Text(destination.title,
-                          style: titleStyle,
-                        ),
+                        // child: Text(destination.title,
+                        //   style: titleStyle,
+                        // ),
                       ),
                     ),
                   ],
@@ -115,31 +135,31 @@ class TravelDestinationItem extends StatelessWidget {
                             style: descriptionStyle.copyWith(color: Colors.black54),
                           ),
                         ),
-                        Text(destination.description[1]),
-                        Text(destination.description[2]),
+                        // Text(destination.description[1]),
+                        // Text(destination.description[2]),
                       ],
                     ),
                   ),
                 ),
               ),
               // share, explore buttons
-              ButtonTheme.bar(
-                child: ButtonBar(
-                  alignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    FlatButton(
-                      child: const Text('SHARE'),
-                      textColor: Colors.amber.shade500,
-                      onPressed: () { /* do nothing */ },
-                    ),
-                    FlatButton(
-                      child: const Text('EXPLORE'),
-                      textColor: Colors.amber.shade500,
-                      onPressed: () { /* do nothing */ },
-                    ),
-                  ],
-                ),
-              ),
+              // ButtonTheme.bar(
+              //   child: ButtonBar(
+              //     alignment: MainAxisAlignment.start,
+              //     children: <Widget>[
+              //       FlatButton(
+              //         child: const Text('SHARE'),
+              //         textColor: Colors.amber.shade500,
+              //         onPressed: () { /* do nothing */ },
+              //       ),
+              //       FlatButton(
+              //         child: const Text('EXPLORE'),
+              //         textColor: Colors.amber.shade500,
+              //         onPressed: () { /* do nothing */ },
+              //       ),
+              //     ],
+              //   ),
+              // ),
             ],
           ),
         ),
@@ -161,28 +181,8 @@ class _MyBookingsState extends State<MyBookings> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Bookings'),
-        actions: <Widget>[
-          IconButton(
-            icon: const Icon(Icons.sentiment_very_satisfied),
-            onPressed: () {
-              setState(() {
-                _shape = _shape != null ? null : const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16.0),
-                    topRight: Radius.circular(16.0),
-                    bottomLeft: Radius.circular(2.0),
-                    bottomRight: Radius.circular(2.0),
-                  ),
-                );
-              });
-            },
-          ),
-        ],
-      ),
-      body: ListView(
+    return Container(
+      child: ListView(
         itemExtent: TravelDestinationItem.height,
         padding: const EdgeInsets.only(top: 8.0, left: 8.0, right: 8.0),
         children: destinations.map<Widget>((TravelDestination destination) {

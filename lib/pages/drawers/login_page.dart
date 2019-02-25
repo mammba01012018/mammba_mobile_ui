@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mammba/common/common-fields.dart';
 import 'package:http/http.dart' as http;
-import 'package:mammba/home_page.dart';
 import 'package:mammba/models/LogInUser.dart';
+import 'package:mammba/models/LoginResponse.dart';
 import 'package:mammba/models/Member.dart';
+import 'package:mammba/pages/home_page.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 
 class LoginPage extends StatefulWidget {
@@ -64,37 +65,17 @@ class _LoginPageState extends State<LoginPage> {
             print("Response status: ${response.statusCode}");
             print("Response body: ${response.body}");
             Map<String, dynamic> member = jsonCodec.decode(response.body);
-            print(member['logUsing']);
+            print(member['_csrf']);
             var user = member['member'];
             var userFinal = new Member.fromJson(user);
             userFinal.emailAddress = user['emailAddress'];
-            HomePage.user = userFinal;
-            // print(mem);
-            // user = user.province;
-            // String address1;
-            // String country;
-            // String password;
-            // String mobileNumber;
-            // String emailAddress;
-            // String username;
-            // String userType;
-            print(userFinal.toString());
-            // print('We sent the verification link to ${member['emailAddress']}.');
-
-            // Map userMap = json.decode(json);
-            // var user = new Member()  fromJson(userMap);
-            // var json = jsonCodec.decode(response.body);
-            // Member user = json.member;
-                // print(user.toString());
-            String val = response.body.toString();
+            print(userFinal.memberId);
+              print(userFinal.userId);
+            var resultResponse  = new LoginResponse.toSave(userFinal, member['_csrf'].toString());
+            
+            
             if(response.body.isNotEmpty) {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-                
-                // HomePage.user = response.body;                // Member user; 
-                Navigator.push(context, new MaterialPageRoute(
-                  builder: (context) => new HomePage())
-                );
+                Navigator.pop(context, resultResponse);
             } else {
                 Alert.alert(context, title: "Invalid Login", content: "Username and password do not match. Please try again")
                   .then((_) => null);

@@ -24,7 +24,7 @@ class Member {
     String emailAddress;
     String username;
     String userType;
-
+    int userId;
    Member() {
 
    }
@@ -46,7 +46,8 @@ class Member {
         rate = json['rate'],
         userType = json['userType'],
         memberId = json['memberId'],
-        username = json['username'];
+        username = json['username'],
+        userId = json['userId'];
 
 
   //  Member.fromJson(Map<String, dynamic> json)

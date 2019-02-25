@@ -6,12 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mammba/common/RegisterUtil.dart';
 import 'package:mammba/common/widgets/country-picker.dart';
-import 'package:mammba/login_page.dart';
 import 'package:mammba/models/Member.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
 import 'package:country_pickers/country.dart';
 import 'package:country_pickers/country_pickers.dart';
+import 'package:mammba/pages/home_page.dart';
+import 'package:mammba/pages/others/security_questions_page.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:mammba/common/widgets/date-time-picker.dart';
 import 'package:mammba/common/utils/input-validators.dart';
@@ -22,8 +23,9 @@ class RegisterPage extends StatefulWidget {
 
   bool isUpdate = false;
   Member updateUser = new Member();
+  String csrf;
 
-  RegisterPage({Key key, this.updateUser, this.isUpdate}) : super(key: key);
+  RegisterPage({Key key, this.updateUser, this.isUpdate, this.csrf}) : super(key: key);
 
   @override
   _RegisterPageState createState() => _RegisterPageState();
@@ -32,6 +34,7 @@ class RegisterPage extends StatefulWidget {
 const jsonCodec = const JsonCodec();
 
 class _RegisterPageState extends State<RegisterPage> {
+   final _controller = new TextEditingController();
   
   RegisterUtil registerUtil = new RegisterUtil();
   final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
@@ -41,13 +44,15 @@ class _RegisterPageState extends State<RegisterPage> {
   DateTime _birthDate = DateTime.now();
   var _gender = "Male";
   List<String> _genders = <String>['Male', 'Female'];
+  List<DropdownMenuItem<String>> _questions = [];
+  var _question1 = null;
+  var _question2 = null;
   bool _inAsyncCall = false;
   String password;
   String confirmPassword;
 
   String _validatePassword(String value) {
     this.password = value;
-    print(this.password);
     if (value.length < 8) {
       return 'The Password must be at least 8 characters.';
     }
@@ -64,17 +69,77 @@ class _RegisterPageState extends State<RegisterPage> {
   submit() {
     if (this._formKey.currentState.validate()) {
       _formKey.currentState.save();
-      // FocusScope.of(context).requestFocus(new FocusNode());
       if(widget.isUpdate==null) {
         this.createUser();
       } else {
-        
+        this.updateUser();
       }
     } 
   }
 
+  void updateUser() {
+      setState(() {
+        _inAsyncCall = true;
+      });
+      this.member.birthDate = this._birthDate.year.toString() + '-' + this._birthDate.month.toString() 
+        + '-' + this._birthDate.day.toString() ;
+      this.member.gender = this._gender;
+      this.member.country = this._selectedDialogCountry.name;
+      print(this.member.memberId);
+      var jsonM = jsonCodec.encode(
+                 { 
+                  "firstName": this.member.firstName,
+                  "lastName": this.member.lastName,
+                  "middleInitial": this.member.middleInitial,
+                  "gender": this.member.gender,
+                  "address2": this.member.address2,
+                  "rate": this.member.rate,
+                  "birthDate": this.member.birthDate,
+                  "province": this.member.province,
+                  "country": this.member.country,
+                  "address1": this.member.address1,
+                  "username": this.member.username,
+                  "password": this.member.password,
+                  "mobileNumber": this.member.mobileNumber,
+                  "emailAddress": this.member.emailAddress,
+                  "memberId": HomePage.user,
+                  "userId": HomePage.user.userId,
+                 }
+            );
+        print(widget.csrf.toString());
+        print(jsonM);
+      //   var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/updateMember?_csrf="+widget.csrf.toString();
+      //   http.post( 
+      //         url,
+      //         headers: {HttpHeaders.CONTENT_TYPE: "application/json"},
+      //         body: jsonM)
+      //           .then((response) {
+      //             print(response);
+      //             print("Response status: ${response.statusCode}");
+      //             print("Response body: ${response.body}");
+
+      //             if(response.body=='Unable to register member.') {
+      //               Alert.alert(context, title: "", content: "Member already exist")
+      //                   .then((_) => null);
+      //             } else {
+      //               if(response.statusCode==200) {
+      //                   Navigator.of(context).pop();
+                         
+      //               } else {
+      //                   Alert.alert(context, title: "Invalid Login", content: "Username and password do not match. Please try again")
+      //                     .then((_) => null);
+      //               }
+      //             }
+      //             setState(() {
+      //               _inAsyncCall = false;
+      //             });
+      //           }).catchError((err) {
+      //             print(err);
+      //           });
+  }
+
+
   void createUser() {
-    print(this.member.toString());
       setState(() {
         _inAsyncCall = true;
       });
@@ -97,10 +162,9 @@ class _RegisterPageState extends State<RegisterPage> {
                   "username": this.member.username,
                   "password": this.member.password,
                   "mobileNumber": this.member.mobileNumber,
-                  "emailAddress": this.member.emailAddress
+                  "emailAddress": this.member.emailAddress,
                  }
             );
-        print(jsonM);
         var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/registerMember";
         http.post( 
               url,
@@ -111,17 +175,17 @@ class _RegisterPageState extends State<RegisterPage> {
                   print("Response status: ${response.statusCode}");
                   print("Response body: ${response.body}");
                   String val = response.body.toString();
-
+                 
                   if(response.body=='Unable to register member.') {
                     Alert.alert(context, title: "", content: "Member already exist")
                         .then((_) => null);
                   } else {
-                    print(val);
                     if(response.statusCode==200) {
-                        Navigator.of(context).pop();
-                        Navigator.push(context, new MaterialPageRoute(
-                          builder: (context) => new LoginPage())
-                        );
+                        // Navigator.of(context).pop();
+                        // Navigator.push(
+                        //     context,
+                        //     MaterialPageRoute(builder: (context) => SecurityQuestionsPage(member: widget.updateUser, isUpdate: widget.isUpdate)),
+                        //   );
                     } else {
                         Alert.alert(context, title: "Invalid Login", content: "Username and password do not match. Please try again")
                           .then((_) => null);
@@ -134,6 +198,31 @@ class _RegisterPageState extends State<RegisterPage> {
                   print(err);
                 });
   }
+
+
+  void getSecurityQuestions() {
+      var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/securityQuestions/getAll";
+      http.post( 
+          url,
+          headers: {HttpHeaders.CONTENT_TYPE: "application/json"})
+            .then((response) {
+              if(response.statusCode==200) {
+                  var jsonM = jsonCodec.decode(response.body);
+                List<DropdownMenuItem<String>> list = [];
+                  for(var q in jsonM) {
+                    list.add(new DropdownMenuItem(child: new Text(q), value: q));
+                  }
+                  setState(() {
+                    _questions= list;
+                  });
+              } else {
+              }
+              
+            }).catchError((err) {
+              print(err);
+            });
+  }
+
 
   void _openCountryPickerDialog() => showDialog(
     context: context,
@@ -153,7 +242,6 @@ class _RegisterPageState extends State<RegisterPage> {
   );
 
   setCountry(Country country) {
-    print(country.name);
     _selectedDialogCountry = country;
     this.member.country = country.name;
   }
@@ -209,21 +297,19 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
     if(widget.isUpdate!=null) {
-      print(_selectedDialogCountry.name);
       this._gender = widget.updateUser.gender;
       for(var i=0; i<countriesList.length; i++) {
-         print(countriesList[i]['name']);
         if(countriesList[i]['name']==widget.updateUser.country) {
           _selectedDialogCountry = CountryPickerUtils.getCountryByIsoCode(countriesList[i]['isoCode']);
           break;
         }
       }
     }
+    this.getSecurityQuestions();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sign Up'),
-        backgroundColor: Colors.teal,
-        // actions: <Widget>[MaterialDemoDocumentationButton(DateAndTimePickerDemo.routeName)],
+        backgroundColor: Colors.teal
       ),
       body: ModalProgressHUD (
           inAsyncCall: _inAsyncCall,
@@ -326,9 +412,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                           isDense: true,
                                           onChanged: (String newValue) {
                                             setState(() {
-                                              print(newValue);
                                               _gender = newValue;
-                                              print(_gender);
                                             });
                                           },
                                           items: _genders.map((String value) {
@@ -349,7 +433,6 @@ class _RegisterPageState extends State<RegisterPage> {
                               // selectedDate: widget.isUpdate!=null ? DateTime.parse(widget.updateUser.birthDate) : _birthDate,
                               selectedDate: _birthDate,
                               selectDate: (DateTime date) {
-                                print(widget.updateUser.birthDate);
                                 setState(() {
                                   _birthDate = date;
                                 });
@@ -442,7 +525,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             new Text("Account", style: new TextStyle(fontWeight: FontWeight.w500 , fontSize: 16.0, color: Colors.teal),),
-                            widget.isUpdate==null ? new TextFormField(
+                            new TextFormField(
                                 inputFormatters: [
                                   new LengthLimitingTextInputFormatter(20),
                                 ],
@@ -455,7 +538,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 onSaved: (String value) {
                                   this.member.username= value;
                                 }
-                            ): new Container(),
+                            ),
                             new TextFormField(
                               initialValue: widget.isUpdate!=null ? widget.updateUser.emailAddress : '',
                               keyboardType: TextInputType.emailAddress,
@@ -506,7 +589,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                               ],
                             ),
-                            widget.isUpdate==null ? Row(
+                            Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Expanded(
@@ -537,11 +620,83 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),    
                                 ),
                               ],
-                            ): new Container(),
+                            ),
                           ],
                         )
                       ),
                     ),
+                    // Card(
+                    //   elevation: 2.5,
+                    //   child: new Container(
+                    //   padding: const EdgeInsets.only(top:10.0, left: 10.0, right: 10.0, bottom: 20.0),
+                    //   child: Column(
+                    //       crossAxisAlignment: CrossAxisAlignment.start,
+                    //       children: <Widget>[
+                    //         new Text('Security Questions', style: new TextStyle(fontWeight: FontWeight.w500 , fontSize: 16.0, color: Colors.teal),),
+                    //         SizedBox(height: 13.0),
+                    //         InputDecorator(
+                    //           decoration: const InputDecoration(
+                    //             labelText: 'Question 1',
+                    //             contentPadding: EdgeInsets.all(5.0),
+                    //           ),
+                    //           child: new DropdownButtonHideUnderline(
+                    //               child: new DropdownButton<String>(
+                    //                 value: _question1,
+                    //                 isDense: true,
+                    //                 onChanged: (String newValue) {
+                    //                   setState(() {
+                    //                     _question1 = newValue;
+                    //                   });
+                    //                 },
+                    //                 items: _questions,
+                    //               ),
+                    //             ),
+                    //         ),
+                    //         new TextFormField(
+                    //           decoration: new InputDecoration(
+                    //             labelText: 'Answer 1',
+                    //             labelStyle: new TextStyle(fontSize: 15.0)
+                    //           ),
+                    //           validator: this._validatePassword,
+                    //           onSaved: (String value) {
+                    //             this.member.password = value;
+                    //             this.password = value;
+                    //           }
+                    //         ),
+                    //         SizedBox(height: 13.0),
+                    //         InputDecorator(
+                    //           decoration: const InputDecoration(
+                    //             labelText: 'Question 2',
+                    //             contentPadding: EdgeInsets.all(5.0),
+                    //           ),
+                    //           child: new DropdownButtonHideUnderline(
+                    //               child: new DropdownButton<String>(
+                    //                 value: _question2,
+                    //                 isDense: true,
+                    //                 onChanged: (String newValue) {
+                    //                   setState(() {
+                    //                     _question2 = newValue;
+                    //                   });
+                    //                 },
+                    //                 items: _questions
+                    //               ),
+                    //             ),
+                    //         ),
+                    //         new TextFormField(
+                    //             decoration: new InputDecoration(
+                    //               labelText: 'Answer 2',
+                    //               labelStyle: new TextStyle(fontSize: 15.0)
+                    //             ),
+                    //             validator: this._validatePassword,
+                    //             onSaved: (String value) {
+                    //               this.member.password = value;
+                    //               this.password = value;
+                    //             }
+                    //           ),
+                    //       ],
+                    //     )
+                    //   ),
+                    // ),
                     new Container(
                       width: screenSize.width,
                       child: new RaisedButton(

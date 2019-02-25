@@ -1,12 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:mammba/home_page.dart';
-import 'package:mammba/index_page.dart';
-import 'package:mammba/login_page.dart';
-import 'package:mammba/models/Member.dart';
-import 'package:mammba/my_bookings.dart';
-import 'package:mammba/register_page.dart';
 import 'package:easy_alert/easy_alert.dart';
-import 'package:mammba/start_booking.dart';
+import 'package:flutter/material.dart';
+import 'package:mammba/pages/drawers/login_page.dart';
+import 'package:mammba/pages/drawers/register_page.dart';
+import 'package:mammba/pages/home_page.dart';
 
 void main() => runApp(
     new AlertProvider(
@@ -15,24 +11,20 @@ void main() => runApp(
 ));
 
 class MyApp extends StatelessWidget {
-
-  final routes = <String, WidgetBuilder>{
+   final routes = <String, WidgetBuilder>{
     LoginPage.tag: (context) => LoginPage(),
     RegisterPage.tag: (context) => RegisterPage(),
     HomePage.tag: (context) => HomePage(),
-    MyBookings.tag: (context) => MyBookings(),
-    StartBooking.tag: (context) => StartBooking(),
   };
 
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
+    return MaterialApp(
       title: 'Flutter Demo',
-      theme: new ThemeData(
+      theme: ThemeData(
         primarySwatch: Colors.teal,
-        buttonColor: Colors.teal
       ),
-      home: IndexPage(),
+      home: new HomePage(title: 'Mammba')
     );
   }
 }
