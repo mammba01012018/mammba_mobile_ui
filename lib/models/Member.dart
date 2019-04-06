@@ -6,7 +6,17 @@ class MammbaMember {
 
 }
 
+
+enum UserStatus {
+        Active,
+        TempPassword,
+        Locked,
+        Inactive
+     }
+
 class Member {
+
+
 
    int memberId;
 	 String firstName;
@@ -25,6 +35,7 @@ class Member {
     String username;
     String userType;
     int userId;
+    String userStatus;
    Member() {
 
    }
@@ -36,7 +47,7 @@ class Member {
         gender = json['gender'],
         address1 = json['address1'],
         address2 = json['address2'],
-        birthDate = json ['birthDate'],
+        birthDate = json ['birthDate'].toString(),
         mobileNumber = json['mobileNumber'],
         firstName = json['firstName'],
         emailAddress = json['emailAddress'],
@@ -47,12 +58,8 @@ class Member {
         userType = json['userType'],
         memberId = json['memberId'],
         username = json['username'],
-        userId = json['userId'];
-
-
-  //  Member.fromJson(Map<String, dynamic> json)
-  //     : lastName = json['lastName'],
-  //       email = json['email'];
+        userId = json['userId'],
+        userStatus = json['userStatus'];
 
   Map<String, dynamic> toJson() =>
     {
@@ -69,6 +76,8 @@ class Member {
       'rate': rate,
       'userType': userType,
       'memberId': memberId,
+      'userId': userId,
+      'userStatus': userStatus,
       'username': username,
     };
 

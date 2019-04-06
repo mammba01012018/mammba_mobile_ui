@@ -55,11 +55,8 @@ class _HomePageState extends State<HomePage> {
           builder: (context) => new LoginPage(),
         ));
     setState(() {
-      print(result);
       user = result.user;
-      print(user.memberId);
       csrf = result.csrf;
-      print(user.toString());
     });
   }
 
@@ -79,6 +76,7 @@ class _HomePageState extends State<HomePage> {
                    currentAccountPicture: new GestureDetector(
                     onTap: () {
                       if(user!=null) {
+                        print(user.userId);
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => ContactsDemo(user: user, csrf: csrf)),

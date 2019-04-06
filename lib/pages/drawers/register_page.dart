@@ -11,21 +11,23 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/cupertino.dart';
 import 'package:country_pickers/country.dart';
 import 'package:country_pickers/country_pickers.dart';
-import 'package:mammba/pages/home_page.dart';
 import 'package:mammba/pages/others/security_questions_page.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:mammba/common/widgets/date-time-picker.dart';
 import 'package:mammba/common/utils/input-validators.dart';
 import 'package:country_pickers/countries.dart';
+import 'package:requests/requests.dart';
 
 class RegisterPage extends StatefulWidget {
   static String tag = 'register-page';
 
   bool isUpdate = false;
-  Member updateUser = new Member();
+  Member updateUser;
   String csrf;
+  int memberId;
+  int userId;
 
-  RegisterPage({Key key, this.updateUser, this.isUpdate, this.csrf}) : super(key: key);
+  RegisterPage({Key key, this.updateUser, this.memberId, this.userId, this.isUpdate, this.csrf}) : super(key: key);
 
   @override
   _RegisterPageState createState() => _RegisterPageState();
@@ -77,7 +79,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } 
   }
 
-  void updateUser() {
+  void updateUser() async {
       setState(() {
         _inAsyncCall = true;
       });
@@ -85,57 +87,31 @@ class _RegisterPageState extends State<RegisterPage> {
         + '-' + this._birthDate.day.toString() ;
       this.member.gender = this._gender;
       this.member.country = this._selectedDialogCountry.name;
-      print(this.member.memberId);
       var jsonM = jsonCodec.encode(
-                 { 
-                  "firstName": this.member.firstName,
-                  "lastName": this.member.lastName,
-                  "middleInitial": this.member.middleInitial,
-                  "gender": this.member.gender,
-                  "address2": this.member.address2,
-                  "rate": this.member.rate,
-                  "birthDate": this.member.birthDate,
-                  "province": this.member.province,
-                  "country": this.member.country,
-                  "address1": this.member.address1,
-                  "username": this.member.username,
-                  "password": this.member.password,
-                  "mobileNumber": this.member.mobileNumber,
-                  "emailAddress": this.member.emailAddress,
-                  "memberId": HomePage.user,
-                  "userId": HomePage.user.userId,
-                 }
-            );
-        print(widget.csrf.toString());
-        print(jsonM);
-      //   var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/updateMember?_csrf="+widget.csrf.toString();
-      //   http.post( 
-      //         url,
-      //         headers: {HttpHeaders.CONTENT_TYPE: "application/json"},
-      //         body: jsonM)
-      //           .then((response) {
-      //             print(response);
-      //             print("Response status: ${response.statusCode}");
-      //             print("Response body: ${response.body}");
-
-      //             if(response.body=='Unable to register member.') {
-      //               Alert.alert(context, title: "", content: "Member already exist")
-      //                   .then((_) => null);
-      //             } else {
-      //               if(response.statusCode==200) {
-      //                   Navigator.of(context).pop();
-                         
-      //               } else {
-      //                   Alert.alert(context, title: "Invalid Login", content: "Username and password do not match. Please try again")
-      //                     .then((_) => null);
-      //               }
-      //             }
-      //             setState(() {
-      //               _inAsyncCall = false;
-      //             });
-      //           }).catchError((err) {
-      //             print(err);
-      //           });
+              {
+              "password": this.member.password,
+              "mobileNumber": this.member.mobileNumber,
+              "emailAddress": this.member.emailAddress,
+              "firstName": this.member.firstName,
+              "lastName": this.member.lastName,
+              "address1": this.member.address1,
+              "middleInitial": this.member.middleInitial,
+              "userId": widget.updateUser.userId
+              }
+        );
+        var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/mammba-user/updateMember?_csrf=" + widget.csrf.toString();
+        try {
+          dynamic body = await Requests.post(url, json: true, body: jsonM );
+          print(body.toString());
+          Alert.alert(context, title: "Updated", content: "Changes successfully saved")
+            .then((_) => Navigator.pop(context));
+        } catch(e) {
+          print(e);
+        } finally {
+          setState(() {
+            _inAsyncCall = false;
+          });
+        }
   }
 
 
@@ -171,21 +147,23 @@ class _RegisterPageState extends State<RegisterPage> {
               headers: {HttpHeaders.CONTENT_TYPE: "application/json"},
               body: jsonM)
                 .then((response) {
+                  print("REGISTER TO");
                   print(response);
                   print("Response status: ${response.statusCode}");
                   print("Response body: ${response.body}");
-                  String val = response.body.toString();
-                 
                   if(response.body=='Unable to register member.') {
                     Alert.alert(context, title: "", content: "Member already exist")
                         .then((_) => null);
                   } else {
                     if(response.statusCode==200) {
-                        // Navigator.of(context).pop();
-                        // Navigator.push(
-                        //     context,
-                        //     MaterialPageRoute(builder: (context) => SecurityQuestionsPage(member: widget.updateUser, isUpdate: widget.isUpdate)),
-                        //   );
+                        Map<String, dynamic> resultMember  = jsonCodec.decode(response.body);
+                        widget.updateUser = new Member.fromJson(resultMember);
+                        print(widget.updateUser.toString());
+                        Navigator.of(context).pop();
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => SecurityQuestionsPage(member: widget.updateUser, isUpdate: widget.isUpdate, userName: null)),
+                          );
                     } else {
                         Alert.alert(context, title: "Invalid Login", content: "Username and password do not match. Please try again")
                           .then((_) => null);
@@ -317,11 +295,19 @@ class _RegisterPageState extends State<RegisterPage> {
             child: SafeArea(
               top: false,
               bottom: false,
-              child: new Form(
+              child: 
+              
+              
+              
+              new Form(
                 key: _formKey,
-                child: ListView(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.only(top:10.0, left: 8.0, right: 8.0, bottom: 20.0),
-                  children: <Widget>[
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
                     Card(
                       elevation: 2.5,
                       child: new Container(
@@ -517,14 +503,14 @@ class _RegisterPageState extends State<RegisterPage> {
                         )
                       ),
                     ),
-                    Card(
+                    widget.isUpdate==true ? new Container() : Card(
                       elevation: 2.5,
                       child: new Container(
                         padding: const EdgeInsets.only(top:10.0, left: 10.0, right: 10.0, bottom: 20.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            new Text("Account", style: new TextStyle(fontWeight: FontWeight.w500 , fontSize: 16.0, color: Colors.teal),),
+                            new Text("Accounts", style: new TextStyle(fontWeight: FontWeight.w500 , fontSize: 16.0, color: Colors.teal),),
                             new TextFormField(
                                 inputFormatters: [
                                   new LengthLimitingTextInputFormatter(20),
@@ -534,6 +520,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   labelText: 'Username',
                                   labelStyle: new TextStyle(fontSize: 15.0)
                                 ),
+                                initialValue: widget.isUpdate!=null ? widget.updateUser.username : '',
                                 validator: (val) => val.isEmpty? 'username is required' : null,
                                 onSaved: (String value) {
                                   this.member.username= value;
@@ -595,6 +582,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Expanded(
                                   flex: 4,
                                   child:  new TextFormField(
+                                    initialValue: widget.isUpdate!=null ? widget.updateUser.password : '',
                                     obscureText: true, // Use secure text for passwords.
                                     decoration: new InputDecoration(
                                       labelText: 'Password',
@@ -611,6 +599,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 Expanded(
                                   flex: 4,
                                   child:  new TextFormField(
+                                    initialValue: widget.isUpdate!=null ? widget.updateUser.password : '',
                                     obscureText: true, // Use secure text for passwords.
                                     decoration: new InputDecoration(
                                       labelText: 'Confirm Password',
@@ -625,84 +614,13 @@ class _RegisterPageState extends State<RegisterPage> {
                         )
                       ),
                     ),
-                    // Card(
-                    //   elevation: 2.5,
-                    //   child: new Container(
-                    //   padding: const EdgeInsets.only(top:10.0, left: 10.0, right: 10.0, bottom: 20.0),
-                    //   child: Column(
-                    //       crossAxisAlignment: CrossAxisAlignment.start,
-                    //       children: <Widget>[
-                    //         new Text('Security Questions', style: new TextStyle(fontWeight: FontWeight.w500 , fontSize: 16.0, color: Colors.teal),),
-                    //         SizedBox(height: 13.0),
-                    //         InputDecorator(
-                    //           decoration: const InputDecoration(
-                    //             labelText: 'Question 1',
-                    //             contentPadding: EdgeInsets.all(5.0),
-                    //           ),
-                    //           child: new DropdownButtonHideUnderline(
-                    //               child: new DropdownButton<String>(
-                    //                 value: _question1,
-                    //                 isDense: true,
-                    //                 onChanged: (String newValue) {
-                    //                   setState(() {
-                    //                     _question1 = newValue;
-                    //                   });
-                    //                 },
-                    //                 items: _questions,
-                    //               ),
-                    //             ),
-                    //         ),
-                    //         new TextFormField(
-                    //           decoration: new InputDecoration(
-                    //             labelText: 'Answer 1',
-                    //             labelStyle: new TextStyle(fontSize: 15.0)
-                    //           ),
-                    //           validator: this._validatePassword,
-                    //           onSaved: (String value) {
-                    //             this.member.password = value;
-                    //             this.password = value;
-                    //           }
-                    //         ),
-                    //         SizedBox(height: 13.0),
-                    //         InputDecorator(
-                    //           decoration: const InputDecoration(
-                    //             labelText: 'Question 2',
-                    //             contentPadding: EdgeInsets.all(5.0),
-                    //           ),
-                    //           child: new DropdownButtonHideUnderline(
-                    //               child: new DropdownButton<String>(
-                    //                 value: _question2,
-                    //                 isDense: true,
-                    //                 onChanged: (String newValue) {
-                    //                   setState(() {
-                    //                     _question2 = newValue;
-                    //                   });
-                    //                 },
-                    //                 items: _questions
-                    //               ),
-                    //             ),
-                    //         ),
-                    //         new TextFormField(
-                    //             decoration: new InputDecoration(
-                    //               labelText: 'Answer 2',
-                    //               labelStyle: new TextStyle(fontSize: 15.0)
-                    //             ),
-                    //             validator: this._validatePassword,
-                    //             onSaved: (String value) {
-                    //               this.member.password = value;
-                    //               this.password = value;
-                    //             }
-                    //           ),
-                    //       ],
-                    //     )
-                    //   ),
-                    // ),
                     new Container(
                       width: screenSize.width,
                       child: new RaisedButton(
+                        color: Colors.teal,
                         padding: EdgeInsets.all(15.0),
                         child: new Text(
-                          widget.isUpdate!=null ? 'Update' : 'Register',
+                          widget.isUpdate==true ? 'Update' : 'Register',
                           style: new TextStyle(
                             color: Colors.white,
                             fontSize: 16.0
@@ -715,8 +633,14 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ) 
                   ],
+                    )                
+                  )
                 ),
             ),
+
+
+
+
             )
       ),
       )

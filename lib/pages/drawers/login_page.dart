@@ -9,7 +9,12 @@ import 'package:mammba/models/LogInUser.dart';
 import 'package:mammba/models/LoginResponse.dart';
 import 'package:mammba/models/Member.dart';
 import 'package:mammba/pages/home_page.dart';
+import 'package:mammba/pages/others/reset_password_page.dart';
+import 'package:mammba/pages/others/security_questions_page.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
+import 'package:requests/requests.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 
 class LoginPage extends StatefulWidget {
   static String tag = '/login-page';
@@ -25,6 +30,7 @@ class _LoginPageState extends State<LoginPage> {
   final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
   bool _inAsyncCall = false;
   bool _isShowButton = true;
+  final myController = TextEditingController();
 
   String _validateEmail(String value) {
     try {
@@ -48,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  submit() {
+  submit() async {
     if (this._formKey.currentState.validate()) {
       _formKey.currentState.save();
       FocusScope.of(context).requestFocus(new FocusNode());
@@ -57,35 +63,37 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _inAsyncCall = true;
       });
-      http.post( 
-        url,
-        headers: {HttpHeaders.CONTENT_TYPE: "application/json"},
-        body: json)
-          .then((response) {
-            print("Response status: ${response.statusCode}");
-            print("Response body: ${response.body}");
-            Map<String, dynamic> member = jsonCodec.decode(response.body);
-            print(member['_csrf']);
-            var user = member['member'];
-            var userFinal = new Member.fromJson(user);
-            userFinal.emailAddress = user['emailAddress'];
-            print(userFinal.memberId);
-              print(userFinal.userId);
-            var resultResponse  = new LoginResponse.toSave(userFinal, member['_csrf'].toString());
-            
-            
-            if(response.body.isNotEmpty) {
-                Navigator.pop(context, resultResponse);
-            } else {
-                Alert.alert(context, title: "Invalid Login", content: "Username and password do not match. Please try again")
-                  .then((_) => null);
-            }
-            setState(() {
-              _inAsyncCall = false;
-            });
-          }).catchError((err) {
-            print(err);
-          });
+      try {
+        dynamic body = await Requests.post(url, json: true, body: json );
+        print(body);
+        var user = body['member'];
+        var userFinal = new Member.fromJson(user);
+        var resultResponse  = new LoginResponse.toSave(userFinal, body['_csrf'].toString());
+        if(userFinal.userStatus=='TempPassword') {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ResetPasswordPage(userId: userFinal.userId, csrf: resultResponse.csrf)),
+          );
+          if(result==true) {
+            resultResponse.user.userStatus='Active';
+            Navigator.pop(context, resultResponse);
+          }
+          
+        } else {
+          Navigator.pop(context, resultResponse);
+        }
+
+
+        final storage = new FlutterSecureStorage();
+      } catch(e) {
+        print(e);
+        Alert.alert(context, title: "Invalid Login", content: "Username and password do not match. Please try again")
+        .then((_) => null);
+      } finally {
+        setState(() {
+          _inAsyncCall = false;
+        });
+      }
     }
   }
 
@@ -105,6 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                   CommonField().logo,
                   SizedBox(height: 48.0),
                   TextFormField(
+                    controller: myController,
                     keyboardType: TextInputType.emailAddress,
                     autofocus: false,
                     decoration: InputDecoration(
@@ -164,7 +173,12 @@ class _LoginPageState extends State<LoginPage> {
                       'Forgot password?',
                       style: TextStyle(color: Colors.black54),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SecurityQuestionsPage(member: new Member(), isUpdate: true, userName: myController.text)),
+                      );
+                    },
                   )
                 ],
               ),

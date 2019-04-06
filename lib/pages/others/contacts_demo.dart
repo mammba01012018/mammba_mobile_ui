@@ -131,9 +131,10 @@ class ContactsDemoState extends State<ContactsDemo> {
                     // _scaffoldKey.currentState.showSnackBar(const SnackBar(
                     //   content: Text("Editing isn't supported in this screen.")
                     // ));
+                    print(widget.user.userId);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => RegisterPage(updateUser: widget.user, isUpdate: true, csrf: widget.csrf)
+                      MaterialPageRoute(builder: (context) => RegisterPage(updateUser: widget.user, memberId: widget.user.memberId, userId:  widget.user.userId, isUpdate: true, csrf: widget.csrf)
                     ));
                   },
                 )
