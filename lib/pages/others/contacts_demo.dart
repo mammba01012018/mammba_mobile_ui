@@ -89,7 +89,7 @@ class _ContactItem extends StatelessWidget {
 class ContactsDemo extends StatefulWidget {
   static const String routeName = '/contacts';
 
-  final Member user;
+  Member user;
   String csrf;
 
   ContactsDemo({Key key, this.user, this.csrf}) : super(key: key);
@@ -106,6 +106,19 @@ class ContactsDemoState extends State<ContactsDemo> {
 
   AppBarBehavior _appBarBehavior = AppBarBehavior.pinned;
 
+  void setUserFromUpdated(BuildContext context) async {
+     final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => RegisterPage(updateUser: widget.user, memberId: widget.user.memberId, userId:  widget.user.userId, isUpdate: true, csrf: widget.csrf)
+      ));
+      print("bagong bago");
+      if(result!=null) {
+        setState(() {
+          widget.user = result;
+        });
+      }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -114,6 +127,10 @@ class ContactsDemoState extends State<ContactsDemo> {
         primarySwatch: Colors.teal,
         platform: Theme.of(context).platform,
       ),
+      child: WillPopScope(
+        onWillPop: () {
+           Navigator.pop(context, widget.user);
+        },
       child: Scaffold(
         key: _scaffoldKey,
         body: CustomScrollView(
@@ -123,6 +140,10 @@ class ContactsDemoState extends State<ContactsDemo> {
               pinned: _appBarBehavior == AppBarBehavior.pinned,
               floating: _appBarBehavior == AppBarBehavior.floating || _appBarBehavior == AppBarBehavior.snapping,
               snap: _appBarBehavior == AppBarBehavior.snapping,
+              leading: new IconButton(
+                icon: new Icon(Icons.arrow_back),
+                onPressed: (){Navigator.pop(context, widget.user);}
+              ),
               actions: <Widget>[
                 IconButton(
                   icon: const Icon(Icons.create),
@@ -131,11 +152,8 @@ class ContactsDemoState extends State<ContactsDemo> {
                     // _scaffoldKey.currentState.showSnackBar(const SnackBar(
                     //   content: Text("Editing isn't supported in this screen.")
                     // ));
-                    print(widget.user.userId);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => RegisterPage(updateUser: widget.user, memberId: widget.user.memberId, userId:  widget.user.userId, isUpdate: true, csrf: widget.csrf)
-                    ));
+                   setUserFromUpdated(context);
+                   
                   },
                 )
               ],
@@ -152,7 +170,7 @@ class ContactsDemoState extends State<ContactsDemo> {
                     //   height: _appBarHeight,
                     // ),
                     Image.network(
-                      'https://scontent.fceb1-1.fna.fbcdn.net/v/t1.0-9/1558408_695435787164136_943786540553257078_n.jpg?_nc_cat=104&_nc_eui2=AeFYXKx3v-4zMtMZv16CBzX7fZCn9ikYOzGYoNTG1qL-QwApsu0UBUX8Wchx6UprGKDb8yDadCevEU164ESra4JypgT6VdRQcuXUqU3soKKnug&_nc_ht=scontent.fceb1-1.fna&oh=7d61fe0021a9584483f43c69ed015acf&oe=5CC04FB3',
+                      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIAVvRR35IC9yiDnGjU5dJJU_wxJLLiXQKpefCQdtoUSF7PCQRTg',
                       fit: BoxFit.cover,
                       height: _appBarHeight,
                     ),
@@ -242,6 +260,8 @@ class ContactsDemoState extends State<ContactsDemo> {
           ],
         ),
       ),
+    
+      )
     );
   }
 }

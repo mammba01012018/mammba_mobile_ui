@@ -63,6 +63,49 @@ final List<TravelDestination> destinations = <TravelDestination>[
   )
 ];
 
+final List<TravelDestination> promos = <TravelDestination>[
+  const TravelDestination(
+    assetName: 'assets/el-nido.jpg',
+    assetPackage: 'https://scontent.fmnl6-1.fna.fbcdn.net/v/t1.0-9/17499009_1955072948054035_1593631715129417268_n.jpg?_nc_cat=102&_nc_oc=AQlb69bEqfY3SKa8AhLDWT7C2574mQApLtOHMREhmzv4CZtpqMZZHAsadm4sVuyX4NI&_nc_ht=scontent.fmnl6-1.fna&oh=a400f78f257003916a2ebae768b8f629&oe=5DE82D3D',
+    title: 'Pulag',
+    description: <String>[
+      'Pulag',
+      'Thanjavur',
+      'Thanjavur, Tamil Nadu',
+    ],
+  ),
+  const TravelDestination(
+    assetName: 'assets/el-nido.jpg',
+    assetPackage: 'https://cdn11.bigcommerce.com/s-bv9wyhhu/images/stencil/500x659/products/130/20/baguio-destination__11340.1541234563.1280.1280__19420.1555172705.jpg?c=2&imbypass=on',
+    title: 'Baguio',
+    description: <String>[
+      'Baguio',
+      'Chettinad',
+      'Sivaganga, Tamil Nadu',
+    ],
+  ),
+  const TravelDestination(
+    assetName: 'assets/el-nido.jpg',
+    assetPackage: 'https://www.thepoortraveler.net/wp-content/uploads/2012/08/Taal-Volcano.jpg',
+    title: 'Taal',
+    description: <String>[
+      'Taal',
+      'Chettinad',
+      'Sivaganga, Tamil Nadu',
+    ],
+  ),
+  const TravelDestination(
+    assetName: 'assets/el-nido.jpg',
+    assetPackage: 'https://d1sttufwfa12ee.cloudfront.net/uploads/deal/thumb/90310.jpg',
+    title: 'Ilocos',
+    description: <String>[
+      'Ilocos',
+      'Chettinad',
+      'Sivaganga, Tamil Nadu',
+    ],
+  )
+];
+
 class TravelDestinationItem extends StatelessWidget {
   TravelDestinationItem({ Key key, @required this.destination, this.shape })
     : assert(destination != null && destination.isValid),
@@ -74,6 +117,7 @@ class TravelDestinationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
     final ThemeData theme = Theme.of(context);
     final TextStyle titleStyle = theme.textTheme.headline.copyWith(color: Colors.white);
     final TextStyle descriptionStyle = theme.textTheme.subhead;
@@ -85,13 +129,14 @@ class TravelDestinationItem extends StatelessWidget {
         padding: const EdgeInsets.all(15.0),
         height: height,
         child: Card(
+          color: Colors.teal,
           shape: shape,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               // photo and title
               SizedBox(
-                height: 184.0,
+                height: 150.0,
                 child: Stack(
                   children: <Widget>[
                     Positioned.fill(
@@ -102,9 +147,9 @@ class TravelDestinationItem extends StatelessWidget {
                       
                     ),
                     Positioned(
-                      bottom: 12.0,
-                      left: 16.0,
-                      right: 16.0,
+                      bottom: 10.0,
+                      left: 10.0,
+                      right: 10.0,
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
@@ -132,7 +177,7 @@ class TravelDestinationItem extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 8.0),
                           child: Text(
                             destination.description[0],
-                            style: descriptionStyle.copyWith(color: Colors.black54),
+                            style: descriptionStyle.copyWith(color: Colors.white),
                           ),
                         ),
                         // Text(destination.description[1]),
@@ -142,23 +187,6 @@ class TravelDestinationItem extends StatelessWidget {
                   ),
                 ),
               ),
-              // share, explore buttons
-              // ButtonTheme.bar(
-              //   child: ButtonBar(
-              //     alignment: MainAxisAlignment.start,
-              //     children: <Widget>[
-              //       FlatButton(
-              //         child: const Text('SHARE'),
-              //         textColor: Colors.amber.shade500,
-              //         onPressed: () { /* do nothing */ },
-              //       ),
-              //       FlatButton(
-              //         child: const Text('EXPLORE'),
-              //         textColor: Colors.amber.shade500,
-              //         onPressed: () { /* do nothing */ },
-              //       ),
-              //     ],
-              //   ),
               // ),
             ],
           ),

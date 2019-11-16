@@ -9,11 +9,13 @@ import 'package:mammba/models/LogInUser.dart';
 import 'package:mammba/models/LoginResponse.dart';
 import 'package:mammba/models/Member.dart';
 import 'package:mammba/pages/home_page.dart';
+import 'package:mammba/pages/others/into-slider.dart';
 import 'package:mammba/pages/others/reset_password_page.dart';
 import 'package:mammba/pages/others/security_questions_page.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:requests/requests.dart';
-//import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class LoginPage extends StatefulWidget {
@@ -65,10 +67,11 @@ class _LoginPageState extends State<LoginPage> {
       });
       try {
         dynamic body = await Requests.post(url, json: true, body: json );
-        print(body);
         var user = body['member'];
         var userFinal = new Member.fromJson(user);
         var resultResponse  = new LoginResponse.toSave(userFinal, body['_csrf'].toString());
+        print( userFinal.userStatus.toString());
+        print( resultResponse.toString());
         if(userFinal.userStatus=='TempPassword') {
           final result = await Navigator.push(
             context,
@@ -78,16 +81,27 @@ class _LoginPageState extends State<LoginPage> {
             resultResponse.user.userStatus='Active';
             Navigator.pop(context, resultResponse);
           }
-          
+        } else if(userFinal.userStatus=='Active') {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          String username = prefs.getString('username');
+          String password = prefs.getString('password');
+          print('bago from login jkjk') ;
+          print(username);
+          print(password);
+
+          if(username!=null) {
+            Navigator.pop(context, resultResponse);
+          } else {
+            await prefs.setString('username', this.logInUser.userEmail.toString());
+            await prefs.setString('password', this.logInUser.password.toString());
+          }
+          Navigator.pop(context, resultResponse);
         } else {
           Navigator.pop(context, resultResponse);
         }
-
-
-        final storage = new FlutterSecureStorage();
       } catch(e) {
         print(e);
-        Alert.alert(context, title: "Invalid Login", content: "Username and password do not match. Please try again")
+        Alert.alert(context, title: "value", content: "Username and password do not match. Please try again")
         .then((_) => null);
       } finally {
         setState(() {
@@ -176,7 +190,7 @@ class _LoginPageState extends State<LoginPage> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => SecurityQuestionsPage(member: new Member(), isUpdate: true, userName: myController.text)),
+                        MaterialPageRoute(builder: (context) => SecurityQuestionsPage(member: new Member(), isUpdate: true, userName: null)),
                       );
                     },
                   )

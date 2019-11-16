@@ -1,25 +1,36 @@
 import 'dart:async';
-
+import 'dart:convert';
 import 'package:easy_alert/easy_alert.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mammba/models/LogInUser.dart';
+import 'package:mammba/models/LoginResponse.dart';
 import 'package:mammba/models/Member.dart';
 import 'package:mammba/pages/drawers/login_page.dart';
 import 'package:mammba/pages/drawers/register_page.dart';
 import 'package:mammba/pages/others/contacts_demo.dart';
+import 'package:mammba/pages/tourpages/tours_result.dart';
 import 'package:mammba/tabs/my_bookings.dart';
 import 'package:mammba/tabs/tours.dart';
+import 'package:requests/requests.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage({Key key, this.title}) : super(key: key);
 
   final String title;
-  static Member user;
-  static String csrf;
+  Member user;
+  String csrf;
   static String tag = 'home-page';
+  bool savedUser = false;
+  String titleTo ='Register';
+  HomePage({Key key, this.title,  this.user, this.csrf}) : super(key: key);
 
   @override
   _HomePageState createState() => _HomePageState();
 }
+
+const jsonCodec = const JsonCodec();
+
 
 class _HomePageState extends State<HomePage> {
   int currentTab = 0;
@@ -30,8 +41,8 @@ class _HomePageState extends State<HomePage> {
   MyBookings myBookings;
   List<Widget> pages;
   Widget currentPage;
-  static Member user;
-  static String csrf;
+  bool _inAsyncCall = false;
+  
 
   @override
   void initState() {
@@ -41,11 +52,60 @@ class _HomePageState extends State<HomePage> {
     tours4 = Tours();
     myBookings = MyBookings();
 
+    
+
     pages = [tours, tours2, tours3, tours4, myBookings];
 
     currentPage = tours;
-
+    print('start');
+    
+    initUser();
     super.initState();
+  }
+
+  initUser() async {
+    String username;
+    String password;
+    Future<SharedPreferences> _sprefs = SharedPreferences.getInstance();
+    _sprefs.then(
+      (pref)
+        {
+          username = pref.getString('username');
+          password = pref.getString('password');
+          print('bago shared preferendsadsaceasasas asasa') ;
+          print(username);
+          print(password);
+          this.loginSave(username, password);
+        }
+    );
+  }
+
+  loginSave(username, password) async {
+    if(username!=null) {
+      print('nervana');
+      var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/login?username="+username+"&password="+password;
+      _inAsyncCall = true;
+      try {
+        dynamic body = await Requests.post(url, json: true);
+        var userMember = body['member'];
+        var userFinal = new Member.fromJson(userMember);
+        var resultResponse  = new LoginResponse.toSave(userFinal, body['_csrf'].toString());
+        widget.user = userFinal;
+        setState(() {
+          widget.user = userFinal;
+          widget.csrf = resultResponse.csrf;
+        });
+        print('user eto eto adasdsad');
+        print(userFinal);
+        _inAsyncCall = false;
+        return userFinal;
+      } catch(e) {
+        print(e);
+        _inAsyncCall = false;
+      } finally {
+        _inAsyncCall = false;
+      }
+    } 
   }
 
   void _awaitReturnValueFromLogInScreen(BuildContext context) async {
@@ -54,10 +114,75 @@ class _HomePageState extends State<HomePage> {
         new MaterialPageRoute(
           builder: (context) => new LoginPage(),
         ));
+    print('returned resule from login');
+    print(result.toString());
     setState(() {
-      user = result.user;
-      csrf = result.csrf;
+      widget.user = result.user;
+      widget.csrf = result.csrf;
     });
+  }
+
+  void _awaitReturnValueFromRegisterScreen(BuildContext context) async {
+      final result = await Navigator.push(
+        context,
+        new MaterialPageRoute(
+          builder: (context) => new RegisterPage(),
+        ));
+      this.loginTo();
+  }
+
+   loginTo() async {
+     SharedPreferences prefs = await SharedPreferences.getInstance();
+      String username = prefs.getString('username');
+      String password = prefs.getString('password');
+      print('from reguister login jkjk') ;
+      print(username);
+      print(password);
+      LogInUser logInUser = new LogInUser();
+      logInUser.userEmail = username;
+      logInUser.password = password;
+      var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/login?username="+username+"&password="+password;
+      var json = jsonCodec.encode(logInUser);
+      setState(() {
+        _inAsyncCall = true;
+      });
+      try {
+        dynamic body = await Requests.post(url, json: true, body: json );
+        var user = body['member'];
+        var userFinal = new Member.fromJson(user);
+        var resultResponse  = new LoginResponse.toSave(userFinal, body['_csrf'].toString());
+        print('login eto adkjasgdjkgas dvjas');
+        setState(() {
+          widget.user = userFinal;
+          widget.csrf = resultResponse.csrf;
+        });
+      } catch(e) {
+        print(e);
+        Alert.alert(context, title: "value", content: "Username and password do not match. Please try again")
+        .then((_) => null);
+      } finally {
+        setState(() {
+          _inAsyncCall = false;
+        });
+      }
+  }
+ 
+  clearLoginUser() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    preferences.clear();
+    widget.savedUser = false;
+  }
+
+  void setUserFromUpdated(BuildContext context) async {
+     final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ContactsDemo(user: widget.user, csrf: widget.csrf)),
+      );
+      if(result!=null) {
+        setState(() {
+          widget.user = result;
+        });
+      }
   }
 
   @override
@@ -71,36 +196,29 @@ class _HomePageState extends State<HomePage> {
               children: <Widget>[
                 new UserAccountsDrawerHeader(
                    margin: const EdgeInsets.only(bottom: 0.0, top: 0.0),
-                   accountName: (user!=null ? new Text(user.firstName + ' '+ user.lastName) : new Text('') ),
-                   accountEmail: new Text(user!=null ? user.emailAddress: ''),
+                   accountName: (widget.user!=null ? new Text(widget.user.firstName + ' '+ widget.user.lastName) : new Text('') ),
+                   accountEmail: new Text(widget.user!=null ? widget.user.emailAddress: ''),
                    currentAccountPicture: new GestureDetector(
-                    onTap: () {
-                      if(user!=null) {
-                        print(user.userId);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => ContactsDemo(user: user, csrf: csrf)),
-                      );
-                    }
+                   onTap: () {
+                      if(widget.user!=null) {
+                        setUserFromUpdated(context);
+                     }
                   },
-                  child: user!=null ? new CircleAvatar(
-                    backgroundImage: user!=null ? new NetworkImage("https://scontent.fceb1-1.fna.fbcdn.net/v/t1.0-1/c0.0.160.160a/p160x160/1558408_695435787164136_943786540553257078_n.jpg?_nc_cat=104&_nc_ht=scontent.fceb1-1.fna&oh=2cd0ecbc3a0edcaddef834f799cb6cbd&oe=5CD44282")
+                  child: widget.user!=null ? new CircleAvatar(
+                    backgroundImage: widget.user!=null ? new NetworkImage("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRIAVvRR35IC9yiDnGjU5dJJU_wxJLLiXQKpefCQdtoUSF7PCQRTg")
                        : null, 
                   ) : new Container()
                   ),
                 ),
-                user == null ? new ListTile(
-                  title: new Text("Register"),
+                widget.user == null ? new ListTile(
+                  title: new Text('Register'),
                   trailing: new Icon(Icons.account_box),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => RegisterPage()),
-                    );
+                   _awaitReturnValueFromRegisterScreen(context);
                   }
                 ) : new Container(),
-                user==null ? new ListTile(
-                  title: new Text("Sign In"),
+                widget.user==null ? new ListTile(
+                  title: new Text(widget.user==null ? 'Sign-In' : widget.user.userId.toString()),
                   trailing: new Icon(Icons.account_circle),
                   onTap: () {
                     _awaitReturnValueFromLogInScreen(context);
@@ -109,9 +227,10 @@ class _HomePageState extends State<HomePage> {
                   title: new Text("Sign Out"),
                   trailing: new Icon(Icons.settings_power),
                   onTap: () {
-                    if(user!=null) {
+                    if(widget.user!=null) {
+                      this.clearLoginUser();
                       setState(() {
-                        user = null;
+                        widget.user = null;
                         Navigator.of(context).pop();
                         Alert.alert(context, title: "", content: "Successfully Logout")
                            .then((_) => null
@@ -124,7 +243,6 @@ class _HomePageState extends State<HomePage> {
                   title: new Text("My Messages"),
                   trailing: new Icon(Icons.message),
                   onTap: () {
-                    print(user.toJson());
                     // Navigator.push(
                     //   context,
                     //   MaterialPageRoute(builder: (context) => BottomNavigationDemo()),

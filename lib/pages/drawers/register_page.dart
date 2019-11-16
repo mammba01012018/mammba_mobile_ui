@@ -17,6 +17,7 @@ import 'package:mammba/common/widgets/date-time-picker.dart';
 import 'package:mammba/common/utils/input-validators.dart';
 import 'package:country_pickers/countries.dart';
 import 'package:requests/requests.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterPage extends StatefulWidget {
   static String tag = 'register-page';
@@ -26,6 +27,7 @@ class RegisterPage extends StatefulWidget {
   String csrf;
   int memberId;
   int userId;
+  bool edited = false;
 
   RegisterPage({Key key, this.updateUser, this.memberId, this.userId, this.isUpdate, this.csrf}) : super(key: key);
 
@@ -44,7 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Country _selectedDialogCountry = CountryPickerUtils.getCountryByIsoCode('ph');
   Country _selectedDialogCountryCode = CountryPickerUtils.getCountryByIsoCode('ph');
   DateTime _birthDate = DateTime.now();
-  var _gender = "Male";
+  var _gender;
   List<String> _genders = <String>['Male', 'Female'];
   List<DropdownMenuItem<String>> _questions = [];
   var _question1 = null;
@@ -52,20 +54,32 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _inAsyncCall = false;
   String password;
   String confirmPassword;
-
-  String _validatePassword(String value) {
-    this.password = value;
-    if (value.length < 8) {
-      return 'The Password must be at least 8 characters.';
-    }
-    return null;
-  }
+  bool _isShowButtonPassword = true;
+  bool _isShowButtonConfirmPassword = true;
 
   String _validateConfirmPassword(String value) {
     if(this.password!=value) {
       return 'The password does not match';
     }
     return null;
+  }
+
+  String _validatePassword(String value) {
+    Pattern pattern =
+        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$';
+    RegExp regex = new RegExp(pattern);
+    print(value);
+    if (value.isEmpty) {
+      return 'Please enter password';
+    } else {
+      if (value.length < 8) {
+        return 'Must be at least 8 characters.';
+      }
+      if (!regex.hasMatch(value))
+        return 'Must contain number, special characters, upper case and lower case letter';
+      else
+        return null;
+    }
   }
 
   submit() {
@@ -94,17 +108,24 @@ class _RegisterPageState extends State<RegisterPage> {
               "emailAddress": this.member.emailAddress,
               "firstName": this.member.firstName,
               "lastName": this.member.lastName,
+              "birthDate": this.member.birthDate,
+              "gender": widget.updateUser.gender,
               "address1": this.member.address1,
+              "address2": this.member.address2,
               "middleInitial": this.member.middleInitial,
-              "userId": widget.updateUser.userId
+              "userId": widget.updateUser.userId,
+              'memberId': widget.updateUser.memberId,
+              "province": this.member.province,
+              "country": this.member.country,
               }
         );
+        Map<String, String> headers = {"Content-type": "application/json"};
         var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/mammba-user/updateMember?_csrf=" + widget.csrf.toString();
         try {
-          dynamic body = await Requests.post(url, json: true, body: jsonM );
-          print(body.toString());
+          dynamic body = await Requests.post(url, json: true, headers: headers, body: jsonM );
+          var userFinal = new Member.fromJson(body);
           Alert.alert(context, title: "Updated", content: "Changes successfully saved")
-            .then((_) => Navigator.pop(context));
+            .then((_) => Navigator.pop(context, userFinal));
         } catch(e) {
           print(e);
         } finally {
@@ -114,8 +135,7 @@ class _RegisterPageState extends State<RegisterPage> {
         }
   }
 
-
-  void createUser() {
+  void createUser() async {
       setState(() {
         _inAsyncCall = true;
       });
@@ -123,6 +143,15 @@ class _RegisterPageState extends State<RegisterPage> {
         + '-' + this._birthDate.day.toString() ;
       this.member.gender = this._gender;
       this.member.country = this._selectedDialogCountry.name;
+      SharedPreferences shared_User = await SharedPreferences.getInstance();
+
+      await shared_User.setString('username', this.member.username);
+      await shared_User.setString('password', this.member.password);
+       String usernamse = shared_User.getString('username');
+          String passwosrd = shared_User.getString('password');
+          print('from reguister2313234 login jkjk') ;
+          print(usernamse);
+          print(passwosrd);
       var jsonM = jsonCodec.encode(
                  { 
                   "firstName": this.member.firstName,
@@ -141,6 +170,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   "emailAddress": this.member.emailAddress,
                  }
             );
+            print(jsonM);
         var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/registerMember";
         http.post( 
               url,
@@ -151,30 +181,39 @@ class _RegisterPageState extends State<RegisterPage> {
                   print(response);
                   print("Response status: ${response.statusCode}");
                   print("Response body: ${response.body}");
-                  if(response.body=='Unable to register member.') {
-                    Alert.alert(context, title: "", content: "Member already exist")
-                        .then((_) => null);
-                  } else {
+                  
                     if(response.statusCode==200) {
                         Map<String, dynamic> resultMember  = jsonCodec.decode(response.body);
-                        widget.updateUser = new Member.fromJson(resultMember);
-                        print(widget.updateUser.toString());
-                        Navigator.of(context).pop();
-                        Navigator.push(
+                        var updateUsers = new Member.fromJson(resultMember);
+                        print(password);
+                         Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => SecurityQuestionsPage(member: widget.updateUser, isUpdate: widget.isUpdate, userName: null)),
+                            MaterialPageRoute(builder: (context) => SecurityQuestionsPage(member: updateUsers, isUpdate: widget.isUpdate, userName: null, password: this.member.password)),
                           );
                     } else {
-                        Alert.alert(context, title: "Invalid Login", content: "Username and password do not match. Please try again")
+                        Alert.alert(context, title: "", content: response.body.toString())
                           .then((_) => null);
                     }
-                  }
                   setState(() {
                     _inAsyncCall = false;
                   });
                 }).catchError((err) {
                   print(err);
                 });
+  }
+
+  
+
+
+  void goToSecurityPage() async {
+    final secResult  = Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SecurityQuestionsPage(member: widget.updateUser, isUpdate: widget.isUpdate, userName: null)),
+      );
+    Navigator.pop(context, secResult); // pass result of C to A
+    print('sesas reasdsad');
+    print(secResult);
+
   }
 
 
@@ -274,19 +313,13 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
-    if(widget.isUpdate!=null) {
-      this._gender = widget.updateUser.gender;
-      for(var i=0; i<countriesList.length; i++) {
-        if(countriesList[i]['name']==widget.updateUser.country) {
-          _selectedDialogCountry = CountryPickerUtils.getCountryByIsoCode(countriesList[i]['isoCode']);
-          break;
-        }
-      }
-    }
     this.getSecurityQuestions();
+    if(widget.updateUser!=null && (widget.updateUser.country!=null || widget.updateUser.country!='') && widget.edited==false) {
+      _selectedDialogCountry = CountryPickerUtils.getCountryByName(widget.updateUser.country);
+    }
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sign Up'),
+        title: Text(widget.isUpdate==true? 'Edit Account' : 'Sign Up'),
         backgroundColor: Colors.teal
       ),
       body: ModalProgressHUD (
@@ -296,9 +329,6 @@ class _RegisterPageState extends State<RegisterPage> {
               top: false,
               bottom: false,
               child: 
-              
-              
-              
               new Form(
                 key: _formKey,
                 child: SingleChildScrollView(
@@ -383,7 +413,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                                 ),
                                 const SizedBox(width: 12.0),
-                                Expanded(
+                                widget.isUpdate==true ? new Container() : Expanded(
                                   flex: 4,
                                   child: InputDecorator(
                                     decoration: const InputDecoration(
@@ -414,10 +444,10 @@ class _RegisterPageState extends State<RegisterPage> {
                               ],
                             ),
                             SizedBox(height: 13.0),
-                            DateTimePicker(
+                             widget.isUpdate!=null ? new Container() : DateTimePicker(
                               labelText: 'Birthdate',
-                              // selectedDate: widget.isUpdate!=null ? DateTime.parse(widget.updateUser.birthDate) : _birthDate,
-                              selectedDate: _birthDate,
+                              selectedDate: widget.isUpdate!=null ? DateTime.parse(widget.updateUser.birthDate) : _birthDate,
+                              //selectedDate: _birthDate,
                               selectDate: (DateTime date) {
                                 setState(() {
                                   _birthDate = date;
@@ -496,6 +526,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               selectCountry: (Country country) {
                                 setState(() {
                                   _selectedDialogCountry = country;
+                                  widget.edited = true;
                                 });
                               },
                             ),
@@ -503,15 +534,15 @@ class _RegisterPageState extends State<RegisterPage> {
                         )
                       ),
                     ),
-                    widget.isUpdate==true ? new Container() : Card(
+                    Card(
                       elevation: 2.5,
                       child: new Container(
                         padding: const EdgeInsets.only(top:10.0, left: 10.0, right: 10.0, bottom: 20.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            new Text("Accounts", style: new TextStyle(fontWeight: FontWeight.w500 , fontSize: 16.0, color: Colors.teal),),
-                            new TextFormField(
+                            new Text("Accounts" + widget.isUpdate.toString(), style: new TextStyle(fontWeight: FontWeight.w500 , fontSize: 16.0, color: Colors.teal),),
+                            widget.isUpdate==true ? new Container() : new TextFormField(
                                 inputFormatters: [
                                   new LengthLimitingTextInputFormatter(20),
                                 ],
@@ -520,14 +551,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                   labelText: 'Username',
                                   labelStyle: new TextStyle(fontSize: 15.0)
                                 ),
-                                initialValue: widget.isUpdate!=null ? widget.updateUser.username : '',
+                                initialValue: widget.isUpdate!=null ? widget.updateUser.username: null,
                                 validator: (val) => val.isEmpty? 'username is required' : null,
                                 onSaved: (String value) {
                                   this.member.username= value;
                                 }
                             ),
-                            new TextFormField(
-                              initialValue: widget.isUpdate!=null ? widget.updateUser.emailAddress : '',
+                            TextFormField(
+                              initialValue: widget.isUpdate!=null ? widget.updateUser.emailAddress: null,
                               keyboardType: TextInputType.emailAddress,
                               decoration: new InputDecoration(
                                 labelText: 'E-mail Address',
@@ -542,7 +573,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
-                                Expanded(
+                                widget.isUpdate==true ? new Container() : Expanded(
                                   flex: 3 ,
                                   child:  CountryPickerDropdowns(
                                     labelText: 'Country Code',
@@ -560,7 +591,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   flex: 5,
                                   child: new TextFormField(
                                         initialValue: widget.isUpdate!=null ? 
-                                           widget.updateUser.mobileNumber.replaceAll(this._selectedDialogCountryCode.phoneCode, '')
+                                           widget.updateUser.mobileNumber
                                              : '',
                                         keyboardType: TextInputType.phone,
                                         decoration: new InputDecoration(
@@ -570,46 +601,69 @@ class _RegisterPageState extends State<RegisterPage> {
                                         ),
                                         validator: (val) => val.isEmpty? 'Mobile number is required' : null,
                                         onSaved: (String value) {
-                                          this.member.mobileNumber = this._selectedDialogCountryCode.phoneCode + value;
+                                          if(widget.isUpdate==null) {
+                                            this.member.mobileNumber = this._selectedDialogCountryCode.phoneCode + value;
+                                          } else {
+                                            this.member.mobileNumber = value;
+                                          }
                                         }
                                   ),
                                 ),
                               ],
                             ),
-                            Row(
+                            widget.isUpdate==true ? new Container() : Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Expanded(
-                                  flex: 4,
-                                  child:  new TextFormField(
+                                  flex: 8,
+                                  child:  TextFormField(
                                     initialValue: widget.isUpdate!=null ? widget.updateUser.password : '',
-                                    obscureText: true, // Use secure text for passwords.
+                                    obscureText: _isShowButtonPassword, 
                                     decoration: new InputDecoration(
                                       labelText: 'Password',
-                                      labelStyle: new TextStyle(fontSize: 15.0)
+                                      labelStyle: new TextStyle(fontSize: 15.0),
+                                      suffixIcon: IconButton(
+                                        icon: Icon(Icons.remove_red_eye, color: Colors.grey, ),
+                                        onPressed: () {
+                                          setState(() {
+                                            _isShowButtonPassword = !_isShowButtonPassword;
+                                          });
+                                      }
+                                      )
                                     ),
-                                    validator: this._validatePassword,
+                                    //validator: this._validatePassword,
                                     onSaved: (String value) {
                                       this.member.password = value;
                                       this.password = value;
                                     }
                                   ),
                                 ),
-                                const SizedBox(width: 12.0),
-                                Expanded(
-                                  flex: 4,
-                                  child:  new TextFormField(
-                                    initialValue: widget.isUpdate!=null ? widget.updateUser.password : '',
-                                    obscureText: true, // Use secure text for passwords.
-                                    decoration: new InputDecoration(
-                                      labelText: 'Confirm Password',
-                                      labelStyle: new TextStyle(fontSize: 15.0)
-                                    ),
-                                    validator: this._validateConfirmPassword
-                                  ),    
-                                ),
                               ],
                             ),
+                            widget.isUpdate==true ? new Container() : Row(
+                              children: <Widget>[
+                                Expanded(
+                                    flex: 8,
+                                    child:  new TextFormField(
+                                      initialValue: widget.isUpdate!=null ? widget.updateUser.password : '',
+                                      obscureText: _isShowButtonConfirmPassword, // Use secure text for passwords.
+                                      decoration: new InputDecoration(
+                                        labelText: 'Confirm Password',
+                                        labelStyle: new TextStyle(fontSize: 15.0),
+                                        suffixIcon: IconButton(
+                                          icon: Icon(Icons.remove_red_eye, color: Colors.grey, ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _isShowButtonConfirmPassword = !_isShowButtonConfirmPassword;
+                                            });
+                                        }
+                                        )
+                                      ),
+                                      //validator: this._validateConfirmPassword,
+                                    ),    
+                                  ),
+                                ],
+                              )
                           ],
                         )
                       ),
