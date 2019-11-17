@@ -541,7 +541,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            new Text("Accounts" + widget.isUpdate.toString(), style: new TextStyle(fontWeight: FontWeight.w500 , fontSize: 16.0, color: Colors.teal),),
+                            new Text("Accounts", style: new TextStyle(fontWeight: FontWeight.w500 , fontSize: 16.0, color: Colors.teal),),
                             widget.isUpdate==true ? new Container() : new TextFormField(
                                 inputFormatters: [
                                   new LengthLimitingTextInputFormatter(20),
