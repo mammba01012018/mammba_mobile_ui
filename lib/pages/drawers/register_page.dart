@@ -43,6 +43,7 @@ class _RegisterPageState extends State<RegisterPage> {
   RegisterUtil registerUtil = new RegisterUtil();
   final GlobalKey<FormState> _formKey = new GlobalKey<FormState>();
   Member member = new Member();
+  
   Country _selectedDialogCountry = CountryPickerUtils.getCountryByIsoCode('ph');
   Country _selectedDialogCountryCode = CountryPickerUtils.getCountryByIsoCode('ph');
   DateTime _birthDate = DateTime.now();
@@ -68,15 +69,15 @@ class _RegisterPageState extends State<RegisterPage> {
     Pattern pattern =
         r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$';
     RegExp regex = new RegExp(pattern);
-    print(value);
+    //print(value);
     if (value.isEmpty) {
       return 'Please enter password';
     } else {
       if (value.length < 8) {
         return 'Must be at least 8 characters.';
       }
-      if (!regex.hasMatch(value))
-        return 'Must contain number, special characters, upper case and lower case letter';
+      // if (!regex.hasMatch(value))
+      //   return 'Must contain number, special characters, upper case and lower case letter';
       else
         return null;
     }
@@ -526,6 +527,8 @@ class _RegisterPageState extends State<RegisterPage> {
                               selectCountry: (Country country) {
                                 setState(() {
                                   _selectedDialogCountry = country;
+                                 // widget.updateUser.country = country.name;
+                                 this.member.country = country.name;
                                   widget.edited = true;
                                 });
                               },
@@ -631,7 +634,12 @@ class _RegisterPageState extends State<RegisterPage> {
                                       }
                                       )
                                     ),
-                                    //validator: this._validatePassword,
+                                    onChanged: (String value) {
+                                      this.member.password = value;
+                                      this.password = value;
+                                      print(this.password);
+                                    },
+                                    validator: this._validatePassword,
                                     onSaved: (String value) {
                                       this.member.password = value;
                                       this.password = value;
@@ -659,7 +667,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                         }
                                         )
                                       ),
-                                      //validator: this._validateConfirmPassword,
+                                      validator: this._validateConfirmPassword,
                                     ),    
                                   ),
                                 ],
