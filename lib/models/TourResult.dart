@@ -1,21 +1,30 @@
 class TourResult {
    int tourId;
-   String travelAgency;
-   int price;
-   String photoUrl;
-   List<String> places;
-   Inclusions inclusions;
+  //  String travelAgency;
+  //  int price;
+  //  String photoUrl;
+  //  List<String> places;
+  //  Inclusions inclusions;
+   String tourPackageName;
+   String tourType;
+   String startDate;
+   String endDate;
 
-  TourResult({this.tourId, this.travelAgency, this.price, this.photoUrl, this.places, this.inclusions});
+  //TourResult({this.tourId, this.travelAgency, this.price, this.photoUrl, this.places, this.inclusions, String tourPackageName, String tourType, String endDate, String startDate});
+    TourResult({String tourPackageName, String tourType, String endDate, this.tourId,  String startDate});
 
   factory TourResult.fromJson(Map<String, dynamic> json) {
     return TourResult(
+      // travelAgency: json['travelAgency'] as String,
+      tourPackageName: json['tourPackageName'] as String,
+      tourType: json['tourType'] as String,
+      endDate: json['endDate'] as String,
       tourId: json['tourId'] as int,
-      travelAgency: json['travelAgency'] as String,
-      price: json['price'] as int,
-      photoUrl: json['photoUrl'] as String,
-      places: parsePlaces(json['places']),
-      inclusions: Inclusions.fromJson(json),
+      startDate: json['startDate'] as String,
+      // price: json['price'] as int,
+      // photoUrl: json['photoUrl'] as String,
+      // places: parsePlaces(json['places']),
+      // inclusions: Inclusions.fromJson(json),
     );
   }
 

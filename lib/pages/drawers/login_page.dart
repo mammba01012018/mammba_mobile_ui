@@ -66,12 +66,21 @@ class _LoginPageState extends State<LoginPage> {
         _inAsyncCall = true;
       });
       try {
-        dynamic body = await Requests.post(url, json: true, body: json );
-        var user = body['member'];
+        String hostname = Requests.getHostname(url);
+        await Requests.clearStoredCookies(hostname);
+
+        dynamic body = await Requests.post(url, json: true,  body: null );
+        print('bnody ng login');
+        print(body.json());
+        var user = body.json()['member'];
         var userFinal = new Member.fromJson(user);
-        var resultResponse  = new LoginResponse.toSave(userFinal, body['_csrf'].toString());
+        var resultResponse  = new LoginResponse.toSave(userFinal, body.json()['_csrf'].toString());
+        await Requests.setStoredCookies(hostname, {'X-CSRF-TOKEN': body.json()['_csrf']});
+        var cookies = await Requests.getStoredCookies(hostname);
         print( userFinal.userStatus.toString());
         print( resultResponse.toString());
+        print('csrf to');
+        print(body.json()['_csrf'].toString());
         if(userFinal.userStatus=='TempPassword') {
           final result = await Navigator.push(
             context,
@@ -100,6 +109,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pop(context, resultResponse);
         }
       } catch(e) {
+        print('catching');
         print(e);
         Alert.alert(context, title: "value", content: "Username and password do not match. Please try again")
         .then((_) => null);

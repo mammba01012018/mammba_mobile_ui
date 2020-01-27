@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:mammba/models/TourResult.dart';
 import 'package:flutter_star_rating/flutter_star_rating.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:requests/requests.dart';
 
 class ToursResult extends StatefulWidget {
   static String tag = '/tours-result';
@@ -16,12 +17,34 @@ const jsonCodec = const JsonCodec();
 class _ToursResultState extends State<ToursResult> {
 
   Future<List<TourResult>> getTours() async {
-    final data =await http.get("http://www.mocky.io/v2/5d460586300000d05dc5c991");
-    final parsed = json.decode(data.body).cast<Map<String, dynamic>>();
-    print(parsed);
-    List<TourResult> tours = parsed.map<TourResult>((json) => TourResult.fromJson(json)).toList();
-    print(tours);
-    return tours;
+
+    var bodyRequest = {
+      "startDate" : "2020-01-01",
+      "endDate" : "2020-01-15",
+      "tourMinSlot" : 1,
+      "tourMaxSlot" : 100,
+      "tourDestination" : [{
+        "tourDestinationDescription" : "Siargao"
+      }]
+    };
+    //var json = jsonCodec.encode(bodyRequest);
+    var url = "http://jpcloudusa021.nshostserver.net:33926/mammba/tour/searchTours";
+    var hostname = Requests.getHostname(url);
+    var cookies = await Requests.getStoredCookies(hostname);
+
+    var body = await Requests.post(url, body: bodyRequest, timeoutSeconds: 100, persistCookies: true, bodyEncoding: RequestBodyEncoding.JSON );
+    dynamic json = body.json();
+    print("sasas nasas");
+    print(json);
+    
+    
+    
+    
+
+
+    
+    
+    return [];
   }
 
   @override
@@ -75,7 +98,8 @@ class _ToursResultState extends State<ToursResult> {
                                         children: <Widget>[
                                           Positioned.fill(
                                             child: Image.network(
-                                              snapshot.data[index].photoUrl,
+                                              // snapshot.data[index].photoUrl,
+                                              "https://blog.abodoo.com/wp-content/uploads/2019/02/travel-blog1.jpg",
                                               fit: BoxFit.cover,
                                             ),
                                           ),
@@ -90,7 +114,7 @@ class _ToursResultState extends State<ToursResult> {
                                       child: Column(
                                         children: <Widget>[
                                           Text(
-                                            "${snapshot.data[index].travelAgency.toString()}",
+                                            "${snapshot.data[index].tourId}",
                                             style: TextStyle(
                                             fontSize: 18,
                                             color: Colors.teal,
@@ -121,7 +145,7 @@ class _ToursResultState extends State<ToursResult> {
                                         textDirection: TextDirection.rtl,
                                         children: <Widget>[
                                           Text(
-                                            "P ${snapshot.data[index].price.toString()}",
+                                            "P ${snapshot.data[index].tourPackageName.toString()}",
                                             textDirection: TextDirection.rtl,
                                             style: TextStyle(
                                             fontSize: 24,
