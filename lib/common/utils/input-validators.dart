@@ -1,5 +1,6 @@
 class InputValidators {
 
+
   static String validateEmail(String value) {
     try {
       if(isEmail(value)) {
